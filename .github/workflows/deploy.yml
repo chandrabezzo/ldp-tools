@@ -5,7 +5,6 @@ on:
     branches:
       - main
 
-# 🔥 Force Node 24 (fix deprecation warning)
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -23,40 +22,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node (Node 24 runtime)
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20   # runtime for your app (safe for Vite)
+          node-version: 20
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci
+      - run: npm ci
+      - run: npm run build
 
-      - name: Build project
-        run: npm run build
-
-      # 🔍 DEBUG: print structure (VERY IMPORTANT)
-      - name: Debug dist structure
+      # 🔥 IMPORTANT FIXES
+      - name: Prepare GitHub Pages files
         run: |
-          echo "==== DIST ROOT ===="
-          ls -la dist || echo "dist missing"
-          echo "==== CHECK index ===="
-          test -f dist/index.html && echo "index.html exists" || (echo "index.html missing" && exit 1)
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
 
-      # 🔥 Fix SPA routing
-      - name: SPA fallback
-        run: cp dist/index.html dist/404.html
+      - name: Debug
+        run: ls -la dist
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v5
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist   # 👈 CRITICAL
+          path: ./dist
 
   deploy:
     needs: build
@@ -67,6 +56,5 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: Deploy
-        id: deployment
+      - id: deployment
         uses: actions/deploy-pages@v4
